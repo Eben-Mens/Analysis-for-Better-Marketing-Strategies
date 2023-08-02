@@ -1,0 +1,300 @@
+---
+title: "Bellabeat_Project"
+Poject: "Capstone Project"
+author: "Ebenezer Nii Okai Mensah"
+date: "2023-07-15"
+output: word_document
+---
+#### About the Company
+Bellabeat ia a high-tech manufacturer of health-focused products for women. Bellabeat is a successful small company, but they have the potential to become a larger player in the global smart device market.
+
+####  Analysis Questions
+What are some trends in smart device usage? 
+How could these trends apply to Bellabeat customers? 
+How could these trends help influence Bellabeat's marketing strategy?
+
+####  Data Source: 
+Data: Kaggle-FitBit Fitness Tracker Data: [link here](https://www.kaggle.com/datasets/arashnic/fitbit)
+Author: Mobius
+
+## ASK PHASE
+####  Business Plan
+Is to analyze smart device usage and identify trends and insight to be applied to Bellabeat marketing strategies to unlock new growth opportunities.
+
+#### Stakeholders
+Urška Sršen - Bellabeat cofounder and Chief Creative Officer
+Sando Mur - Mathematician and Bellabeat’s cofounder
+
+## PREPARE PHASE
+#### Data and Organization
+Data contains personal tracker data, including minute-level output for physical activity, heart rate, and sleep monitoring. It includes information about daily activity, steps, and heart rate that can be used to explore users’ habits. There are 18 csv files in the folder. The data has been organized in a long format.
+
+#### Credibility and Integrity
+Using the ROCCC, Reliable,Original,Comprehensive, Current and Cited - The data won't pass the mark of reliable because it is limited to only 30 fitbit users and this data was originally not collected by the bellabeat company. This data is not current, it was updated 3 years ago. There is a sampling bias based on demographic selection. In terms of gender selection we don't know the percentage of each gender in the sampling selection. There is limitation of time because the data being used was collected within 1 month (4-12-2016 - 5-12-2016). The date format is not consistent throughout the files, daily activity has only date and sleep and heartrate has date with time format. The datatype to all the dates in all 3 files are character formats, this needs to be changed to date format.
+
+#### Licensing, privacy and accessibility
+The data is public data and the owner has voluntarily waived all rights worldwide under copyright law. This makes this dataset free to use, modify and distribute without any prior permission. 
+
+#### Installing and loading common packages and libraries
+```{r library tidyverse}
+library(tidyverse)
+```
+
+#### Loading the source for the files
+```{r Source Folder}
+setwd("C:/Users/USER/Desktop/Capstone Project/Fitbit_tracker_data/Fitabase Data")
+```
+
+#### Loading your CSV files
+I will be working with this files
+- dailyActivity_merged.csv
+- sleepDay_merged.csv
+- weightLogInfo_merged.csv
+
+#### Dataframe for the daily activity data. 
+```{r daily_activity_dataframe}
+daily_activity <- read.csv("dailyActivity_merged.csv")
+```
+
+#### Dataframe for the sleep data. 
+```{r sleep_day_dataframe}
+sleep_day <- read.csv("sleepDay_merged.csv")
+```
+
+#### Dataframe for the weight data. 
+```{r weight_dataframe}
+weight <- read.csv("weightLogInfo_merged.csv")
+```
+
+#### Sorting and Filtering datasets for NA
+Data in all 3 files are in ascending order and I also checked for N/A in the id to remove any observation without Id's.
+```{r Checking for Spaces}
+daily_activity <- filter(daily_activity,Id != " ")
+sleep_day <- filter(sleep_day,Id != " ")
+weight <- filter(weight,Id != " ")
+```
+
+## PROCESS PHASE
+#### Tool being used
+I am using Rstudio for this analysis because it has the tools for processing, analysis, visualization an documentation.
+
+#### Exploring the 3 files
+Data and column names in daily_activity data.
+```{r head_columnnames_daily}
+head(daily_activity)
+colnames(daily_activity)
+```
+Data and column names in sleep_day data.
+```{r head_columnnames_sleep}
+head(sleep_day)
+colnames(sleep_day)
+```
+Data and column names in weight data
+```{r head_columnnames_heartrate}
+head(weight)
+colnames(weight)
+```
+
+####  Installing and loading common packages and libraries
+```{r library_skimr, message=FALSE, warning=FALSE}
+library(skimr)
+```
+```{r library_janitor,message=FALSE, warning=FALSE}
+library(janitor)
+```
+```{r library_here,message=FALSE, warning=FALSE}
+library(here)
+```
+
+#### Check the data for errors
+####  Cleaning
+Time to cleanup! First we will check for the number of participants in each dataset if it truly matches the 30 fitbit members mentioned earlier.
+```{r distinct}
+n_distinct(daily_activity$Id)
+n_distinct(sleep_day$Id)
+n_distinct(weight)
+```
+
+#### Observations for each dataframe
+```{r observation}
+nrow(daily_activity)
+nrow(sleep_day)
+nrow(weight)
+```
+
+#### Looking for duplicates
+```{r duplicates}
+sum(duplicated(daily_activity))
+sum(duplicated(sleep_day))
+sum(duplicated(weight))
+```
+
+#### Remove duplicates
+You realize that there are duplicates in the sleep_day data frame. It has 413 observations. 
+```{r Remove duplicate}
+sleep_day <- sleep_day %>%
+  distinct()%>%
+  drop_na()
+```
+
+Checking whether duplicate is gone
+```{r check for duplicate}
+sum(duplicated(sleep_day))
+```
+
+#### Renaming Columns names 
+I will rename all column names to a specific format thus in lowercase, which will help with merging of data frames in the coming steps of the analysis. 
+```{r Renaming_daily}
+clean_names(daily_activity)
+daily_activity <- rename_with(daily_activity,tolower)
+```
+
+```{r Renaming_sleep}
+clean_names(sleep_day)
+sleep_day <- rename_with(sleep_day,tolower)
+```
+
+```{r Renaming_heartrate}
+clean_names(weight)
+weight <- rename_with(weight,tolower)
+```
+
+#### Cleaning Date and Time
+Looking at the data we have in daily activity, sleep and weight, you will realize that, the formats are in characters instead of date. The column ActivityDate in dailyactivity has only date and the column Sleepday and date in sleepday and weight has date and time. For consistency in working with all files we need to format these columns into one format %M/%d/%y. We will ignore the time in the sleeepday and date column, we only require the date from both datasets.
+
+#### Installing and loading common packages and libraries
+```{r lubridate for dates}
+library(lubridate)
+```
+
+#### changing column names to one consistent name for date
+```{r renaming column names}
+daily_activity <- daily_activity %>%
+  rename(date = activitydate)
+sleep_day <- sleep_day %>%
+  rename(date = sleepday)
+weight <- weight %>%
+  rename(date = date)
+```
+
+#### Changing character format to date format for Consistency
+```{r changing chr to date}
+daily_activity <- daily_activity %>%
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))
+head(daily_activity)
+
+sleep_day <- sleep_day %>%
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))
+head(sleep_day)
+
+weight <- weight %>%
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))
+head(weight)
+```
+
+#### Verification of Clean data
+Data has been properly cleaned . 
+
+#### Merge two datasets first, then 1 after
+```{r merge data}
+dasw_combined <- merge(daily_activity,sleep_day, by=c("id","date"))
+glimpse(dasw_combined)
+```
+```{r}
+dasw_combined <- merge(dasw_combined,weight, by=c("id","date"))
+glimpse(dasw_combined)
+```
+#### View combined data
+```{r}
+head(dasw_combined)
+```
+
+## ANALYZE PHASE
+It's now time to identify trends and relationship in our data. The cleaned and prepared data will now be used to bring out new insights that will help improve Bellabeat marketing strategy. 
+
+#### Count for the total number of people in the combined dataset
+Before I start the analyses I will want to check if the fitbit members are equal to the 30 we were told about earlier. 
+```{r count}
+n_distinct(dasw_combined)
+```
+After checking, I have 35 unique members that I will be running my analyses on, which does not go with our 30 fitbit members.  
+
+#### Summary on activity
+```{r activity}
+dasw_combined %>%
+  select(totalsteps,totaldistance,sedentaryminutes,calories) %>%
+  summary()
+```
+
+#### Summary on sleeep
+```{r sleep}
+dasw_combined %>%
+  select(totalsleeprecords,totalminutesasleep,totaltimeinbed,weightpounds) %>%
+  summary()
+```
+After running the summary, we have been provided with the minimum, maximum and average results of selected columns(totalsteps, totaldistance, sedentaryminutes, calories,totalsleeprecords, totalminutesasleep, totaltimeinbed and weightpounds. We will later plot this down and check if some of them correspond or correlate to each other. 
+
+## SHARE
+Now we will use visualization to draw out trends in our analyses and later share our finding with our stakeholders. I will be using gglot in R for my visualization. 
+
+#### Relatiobnship b/n Totalsteps and Sedentaryminutes
+```{r sedentary vs total steps, message=FALSE}
+ggplot(data = dasw_combined)+
+  geom_point(mapping = aes(x=totalsteps, y=sedentaryminutes,color=totalsteps))+labs(title = "Totalsteps Vs Sedentaryminutes")+annotate("text",x=10000,y=350,label="the greater percentage took more steps",size=3,angle=8)
+```
+
+Based on the scatter plot, the total steps is more than the sedentary minutes. You also realize that the higher the total steps the lower the sedentary minutes and vice-versa, if the sedentary minutes is higher the total steps is less. The higher percentage fall in the middle of the plot where sedentary minutes and total steps are balanced. More steps were taken compared to sedentary minutes. Lets get the average of both sides to prove our point.
+
+#### Average of Sedentary and totalsteps
+```{r average of sedentaryminutes and totalsteps, message=FALSE}
+ggplot(data = dasw_combined)+
+  geom_smooth(mapping=aes(x=totalsteps,y=sedentaryminutes))+labs(title = "Average of Sedentaryminutes and Totalsteps")+annotate("text",x=10000,y=900,label="average = more steps,less sitting ",size=3,angle=8,)
+```
+
+Based on our average, we can now inform our customer segments on behaviour and physiological ways.
+
+#### Relatiobnship b/n Totalminutesasleep vs Totaltimeinbed
+```{r totaltimeinbed vs totalminutesasleep, message=FALSE}
+ggplot(data = dasw_combined)+
+  geom_smooth(mapping = aes(x=totalminutesasleep, y=totaltimeinbed))+ geom_point(mapping = aes(x=totalminutesasleep, y=totaltimeinbed))+ labs(title = "Total minutes asleep vs Total time in bed")+annotate("text",x=400,y=300,label="relatioship is linear",size=3,angle=20,)
+```
+
+The relationship between total minutes asleep and total time in bed is linear. This shows that people sleep at the right time and do not participate in any other activities. 
+
+#### Relatiobnship b/n Veryactiveminutes and Calories
+```{r veryactiveminutes and calories, message=FALSE}
+ggplot(data = dasw_combined)+
+  geom_line(mapping=aes(x=veryactiveminutes,y=calories,color=calories))+geom_smooth(mapping=aes(x=veryactiveminutes,y=calories))+annotate("text",x=80,y=3700,label="positive correlation",size=3,angle=20)+labs(title="Very active minutes and Calories")
+```
+
+Based on the correlation between veryactiveminutes and calories, we can conclude that the more active a person is, the higher chance of burning calories. This insight will be crossed check with calories and weight to confirm if active minutes affecting calories then it should also affect the the weight of a person. 
+
+#### Relatiobnship b/n Weight and Calories
+```{r weight and calories, message=FALSE}
+ggplot(data = dasw_combined)+
+  geom_point(mapping=aes(x=calories,y=weightkg,color=calories))+geom_smooth(mapping=aes(x=calories,y=weightkg))+labs(title="Weight and Calories")+annotate("text",x=3500,y=60,label="> calories burnt, < weight achieved",size=3,angle=10)
+```
+
+This plot explains the theory behind more calories being burnt, weight loss being achieved. We noticed from the earlier plot that, active minutes leads to burning of calories and burning of calories also leads to loss of weight. This is an insight that will benefit the business plan of the Bellabeat Corporation.  
+
+## ACT
+Observation, insights and trends have been drawn out of our analyze phase with calculations in summary(looking at our maximum, minimum and average) of a few selected columns in the dataset. Graphs were also created in the share phase to throw more light on relationships between data.
+
+Some few recommendations have been made below to answer our business task: Analyze smart devices and identify trends and insights to be applied to Bellabeat marketting strategies to unlock new growth opporunities. 
+
+**Recommendations:**
+
+* Daily, weekly and monthly update on steps taken to keep encouraging those who hit their daily mark steps and set new goals for them. 
+
+* Identify and remind those within the sedentary portion on the benefits of taking walks and recommend ways on taking daily steps.e.g. taking dogs for walks, parking further away and using the stairs more. 
+
+* Reward systems can also be created to boost to reward those who continuously hit their daily steps mark.
+
+* Bellabeat can use the analyses under sleep to improve peoples sleep time by sending notifications when time for sleep is up and set off alarms to wake them up after a specified sleep time. 
+
+* Being active leads to burning calories and Bellabeat can use this information to set up programs for its members such jogging, community athletics programs, sports and etc, and after update its participants on how many calories they have burnt in the few hours spent.
+
+* Lastly based on insight and trend confirmed on the fact that active minutes affects burning of calories then to loss of weight. Bellabeat can use this information to inform its members on their loss of weight and gain of weight periodically and this can help members to check themselves properly. 
+
+
+## *END OF ANALYZING BELLABEAT MARKETING ANALYSIS CASE STUDY*
